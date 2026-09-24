@@ -4,7 +4,7 @@
 // ============================================================
 
 /* ---- Firebase refs ---- */
-let db, auth, storage;
+let db, auth;
 let currentEventId = null;
 
 /* ---- Init ---- */
@@ -22,9 +22,8 @@ function initFirebase() {
   }
   try {
     firebase.initializeApp(firebaseConfig);
-    db      = firebase.firestore();
-    auth    = firebase.auth();
-    storage = firebase.storage();
+    db   = firebase.firestore();
+    auth = firebase.auth();
     auth.signInAnonymously().catch(console.error);
   } catch (e) {
     console.error('Firebase init error:', e);
@@ -77,14 +76,12 @@ async function handleCreateEvent(e) {
   e.preventDefault();
   if (!IS_CONFIGURED) { showToast('⚠️ Configura prima Firebase! Leggi SETUP.md', 'error'); return; }
 
-  const nameInput = document.getElementById('event-name');
-  const dateInput = document.getElementById('event-date');
-  const pinInput  = document.getElementById('event-pin');
+  const nameInput  = document.getElementById('event-name');
+  const dateInput  = document.getElementById('event-date');
   const activeEmoji = document.querySelector('.emoji-btn.active');
 
   const name  = nameInput.value.trim();
   const date  = dateInput.value;
-  const pin   = pinInput.value.trim();
   const emoji = activeEmoji ? activeEmoji.dataset.emoji : '🎉';
 
   if (!name) { showToast('Inserisci il nome dell\'evento', 'error'); return; }
@@ -98,7 +95,6 @@ async function handleCreateEvent(e) {
       name,
       date: date || null,
       emoji,
-      pin: pin || null,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       photoCount: 0
     };
@@ -115,7 +111,6 @@ async function handleCreateEvent(e) {
     // Reset form
     nameInput.value = '';
     dateInput.value = '';
-    pinInput.value  = '';
 
     // Aggiorna lista
     loadMyEvents();
