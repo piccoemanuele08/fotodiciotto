@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Carica le tue foto — Memories Share</title>
+  <meta name="description" content="Carica le tue foto e video all'album condiviso dell'evento. Nessuna app da installare.">
+  <meta name="theme-color" content="#7c3aed">
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    /* Stili specifici per la pagina share */
+    .event-banner {
+      text-align: center;
+      padding: 2.5rem 1rem 1.5rem;
+    }
+    .event-banner .big-emoji {
+      font-size: 4rem;
+      margin-bottom: 0.5rem;
+      animation: bounceIn 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    @keyframes bounceIn {
+      from { transform: scale(0.3); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+    .event-banner h1 { font-size: clamp(1.6rem, 5vw, 2.4rem); margin-bottom: 0.4rem; }
+    .event-banner .event-date { color: var(--text-muted); font-size: 0.9rem; }
+
+    .upload-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      backdrop-filter: blur(20px);
+    }
+
+    /* Name input floating */
+    .name-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 1rem;
+      margin-bottom: 1.5rem;
+      transition: border-color 0.2s;
+    }
+    .name-row:focus-within { border-color: var(--primary); }
+    .name-row span { font-size: 1.25rem; }
+    .name-row input {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+    }
+    .name-row input::placeholder { color: var(--text-dim); }
+
+    /* Full-height screens */
+    #loading-screen, #error-screen, #success-screen {
+      min-height: 70vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+    }
+    #loading-screen .spinner { width: 36px; height: 36px; border-width: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- Sfondo animato -->
+<div class="bg-orbs">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+
+<!-- Header slim -->
+<header class="site-header">
+  <div class="container nav">
+    <a href="index.html" class="logo">
+      <div class="logo-icon">📸</div>
+      <span class="logo-name text-gradient">Memories Share</span>
+    </a>
+  </div>
+</header>
+
+<main class="wrapper">
+  <div class="container" style="max-width:500px;">
+
+    <!-- Loading screen -->
+    <div id="loading-screen">
+      <div class="spinner mb-3" style="width:40px;height:40px;border-width:3px;"></div>
+      <p class="text-muted">Caricamento evento...</p>
+    </div>
+
+    <!-- Error screen -->
+    <div id="error-screen" class="hidden">
+      <div style="font-size:3rem;margin-bottom:1rem;">😕</div>
+      <h2 class="mb-2">Ops!</h2>
+      <p id="error-message" class="text-muted mb-3"></p>
+      <a href="index.html" class="btn btn-ghost">← Torna alla home</a>
+    </div>
+
+    <!-- Upload screen -->
+    <div id="upload-screen" class="hidden">
+
+      <!-- Event banner -->
+      <div class="event-banner fade-in">
+        <div class="big-emoji" id="event-emoji-big">🎉</div>
+        <h1 class="text-gradient" id="event-title">Caricamento...</h1>
+        <p class="event-date" id="event-date-str"></p>
+        <p class="text-muted mt-1" style="font-size:0.875rem;">Carica le tue foto e video 📸</p>
+      </div>
+
+      <!-- Upload main -->
+      <div id="upload-main">
+        <div class="upload-card fade-in fade-in-delay-1">
+
+          <!-- Nome (opzionale) -->
+          <div class="name-row">
+            <span>👤</span>
+            <input id="uploader-name" type="text" placeholder="Il tuo nome (opzionale)" maxlength="30" autocomplete="name">
+          </div>
+
+          <!-- Big action buttons -->
+          <div class="action-buttons mb-3">
+            <!-- Camera (mobile: apre direttamente la fotocamera) -->
+            <button id="camera-btn" class="action-btn primary-action" type="button">
+              <div class="action-icon">📷</div>
+              <span>Scatta foto</span>
+            </button>
+            <input id="camera-input" type="file" accept="image/*,video/*" capture="environment" multiple style="display:none">
+
+            <!-- Galleria -->
+            <button id="gallery-btn" class="action-btn" type="button">
+              <div class="action-icon">🖼</div>
+              <span>Scegli dalla galleria</span>
+            </button>
+            <input id="gallery-input" type="file" accept="image/*,video/*" multiple style="display:none">
+          </div>
+
+          <!-- Drop zone (visible on desktop) -->
+          <div id="drop-zone" class="upload-zone mb-3" style="padding:1.5rem;">
+            <input type="file" accept="image/*,video/*" multiple>
+            <div class="upload-icon">📁</div>
+            <p class="font-medium mb-1">Trascina qui i file</p>
+            <p class="text-muted text-sm">o clicca per selezionare • Max 50MB per file</p>
+          </div>
+
+          <!-- Preview section -->
+          <div id="preview-section" class="hidden mb-3">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium">Anteprima</span>
+              <button onclick="document.getElementById('preview-section').classList.add('hidden'); selectedFiles=[];" class="btn btn-xs btn-ghost">Cancella tutto</button>
+            </div>
+            <div id="preview-grid" class="preview-grid"></div>
+          </div>
+
+          <!-- Upload button -->
+          <button id="upload-btn" class="btn btn-primary btn-lg btn-block" disabled>
+            <span id="upload-count">Seleziona delle foto prima</span>
+          </button>
+
+          <p class="text-center text-xs text-muted mt-2">
+            Le foto vengono caricate privatamente solo per questo evento
+          </p>
+        </div>
+      </div>
+
+      <!-- Progress section -->
+      <div id="progress-section" class="hidden">
+        <div class="upload-card">
+          <h3 class="mb-1">⬆ Caricamento in corso...</h3>
+
+          <!-- Overall progress -->
+          <div class="mb-3">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-sm text-muted">Progresso totale</span>
+              <span class="text-sm" id="overall-progress-label">0 di 0</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="overall-progress-fill"></div>
+            </div>
+          </div>
+
+          <!-- Per-file list -->
+          <div id="upload-list"></div>
+
+          <p class="text-center text-xs text-muted mt-2">Non chiudere questa pagina</p>
+        </div>
+      </div>
+
+      <!-- Success screen -->
+      <div id="success-screen" class="hidden">
+        <div class="success-icon">✓</div>
+        <h2 class="mb-2">Foto caricate!</h2>
+        <p id="success-msg" class="text-muted mb-4"></p>
+
+        <div class="flex flex-col gap-2">
+          <a id="success-gallery-link" href="#" class="btn btn-primary btn-lg">
+            📷 Vedi la galleria →
+          </a>
+          <button id="upload-more-btn" class="btn btn-ghost">
+            ➕ Carica altre foto
+          </button>
+        </div>
+      </div>
+
+      <!-- Gallery link footer -->
+      <div class="text-center mt-3 mb-4">
+        <a id="gallery-link" href="#" class="text-sm" style="color:var(--primary-light);text-decoration:underline;text-underline-offset:3px;">
+          Vedi tutte le foto dell'evento →
+        </a>
+      </div>
+
+    </div><!-- /upload-screen -->
+
+  </div><!-- /container -->
+</main>
+
+<!-- Toasts -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ===== SCRIPTS ===== -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/config.js"></script>
+<script src="js/share.js"></script>
+
+</body>
+</html>

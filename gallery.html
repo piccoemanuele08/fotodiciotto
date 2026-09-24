@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Galleria — Memories Share</title>
+  <meta name="description" content="Visualizza e scarica tutte le foto e video dell'evento condiviso.">
+  <meta name="theme-color" content="#7c3aed">
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    .gallery-header {
+      padding: 2.5rem 0 1.5rem;
+    }
+    .gallery-header .top-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    .gallery-header .header-emoji {
+      font-size: 3.5rem;
+      line-height: 1;
+      flex-shrink: 0;
+      animation: bounceIn 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    @keyframes bounceIn {
+      from { transform: scale(0.3); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+    .gallery-header h1 { font-size: clamp(1.6rem, 5vw, 2.5rem); margin-bottom: 0.25rem; }
+
+    .gallery-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    /* Loading bar */
+    #loading-bar {
+      height: 3px;
+      background: var(--gradient);
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 9999;
+      animation: loadingBar 1.5s ease-in-out infinite;
+    }
+    @keyframes loadingBar {
+      0%   { transform: scaleX(0); transform-origin: left; }
+      50%  { transform: scaleX(0.7); transform-origin: left; }
+      100% { transform: scaleX(1); transform-origin: left; opacity: 0; }
+    }
+
+    /* Photo count badge floating */
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(16,185,129,0.12);
+      border: 1px solid rgba(16,185,129,0.3);
+      color: #6ee7b7;
+      border-radius: var(--radius-full);
+      padding: 0.25rem 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .live-dot {
+      width: 6px; height: 6px;
+      background: #10b981;
+      border-radius: 50%;
+      animation: livePulse 1.5s ease-in-out infinite;
+    }
+    @keyframes livePulse {
+      0%,100% { opacity: 1; }
+      50%     { opacity: 0.3; }
+    }
+
+    /* Sticky controls bar */
+    .sticky-controls {
+      position: sticky;
+      top: 61px;
+      z-index: 100;
+      background: rgba(10,1,24,0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0.85rem 0;
+      margin-bottom: 1.5rem;
+    }
+
+    #error-screen {
+      min-height: 60vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    /* Gallery loading skeleton */
+    .skeleton-grid {
+      columns: 2;
+      column-gap: 0.65rem;
+      margin-bottom: 2rem;
+    }
+    @media (min-width: 540px) { .skeleton-grid { columns: 3; } }
+    .skeleton-item {
+      break-inside: avoid;
+      margin-bottom: 0.65rem;
+      border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.05);
+      animation: skeleton 1.5s ease-in-out infinite;
+    }
+    @keyframes skeleton {
+      0%,100% { opacity: 0.4; }
+      50%      { opacity: 0.8; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Loading bar -->
+<div id="loading-bar"></div>
+
+<!-- Sfondo animato -->
+<div class="bg-orbs">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+
+<!-- Header -->
+<header class="site-header">
+  <div class="container-wide nav">
+    <a href="index.html" class="logo">
+      <div class="logo-icon">📸</div>
+      <span class="logo-name text-gradient">Memories Share</span>
+    </a>
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      Galleria live
+    </div>
+  </div>
+</header>
+
+<!-- Error screen -->
+<div id="error-screen" class="container hidden" style="padding-top:3rem;">
+  <div style="font-size:3rem;margin-bottom:1rem;">😕</div>
+  <h2 class="mb-2">Galleria non trovata</h2>
+  <p id="error-message" class="text-muted mb-3"></p>
+  <a href="index.html" class="btn btn-ghost">← Torna alla home</a>
+</div>
+
+<main class="wrapper" id="main-content">
+  <!-- Gallery header -->
+  <div class="container-wide">
+    <div class="gallery-header fade-in">
+      <div class="top-row">
+        <div class="header-emoji" id="event-emoji-big">🎉</div>
+        <div style="flex:1;min-width:0;">
+          <h1 id="event-title" class="text-gradient">Caricamento...</h1>
+          <p class="text-muted text-sm" id="event-date-str"></p>
+        </div>
+      </div>
+
+      <!-- Stats row -->
+      <div class="stats-row mb-3">
+        <div class="stat-item">
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-label">Totale</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="stat-images">—</div>
+          <div class="stat-label">Foto</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="stat-videos">—</div>
+          <div class="stat-label">Video</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="stat-people">—</div>
+          <div class="stat-label">Persone</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sticky controls -->
+  <div class="sticky-controls">
+    <div class="container-wide gallery-actions">
+      <a id="share-link" href="#" class="btn btn-primary">
+        📤 Aggiungi foto
+      </a>
+      <button id="download-all-btn" class="btn btn-ghost">
+        ⬇ Scarica tutto (ZIP)
+      </button>
+    </div>
+  </div>
+
+  <!-- Gallery grid -->
+  <div class="container-wide">
+
+    <!-- Loading skeletons -->
+    <div id="gallery-loading" class="skeleton-grid">
+      <div class="skeleton-item" style="height:160px;"></div>
+      <div class="skeleton-item" style="height:120px;"></div>
+      <div class="skeleton-item" style="height:200px;"></div>
+      <div class="skeleton-item" style="height:140px;"></div>
+      <div class="skeleton-item" style="height:180px;"></div>
+      <div class="skeleton-item" style="height:130px;"></div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="gallery-empty" class="empty-state hidden">
+      <div class="empty-icon">📷</div>
+      <h3 class="mb-2">Nessuna foto ancora</h3>
+      <p class="text-muted mb-3">Sii il primo a caricare un ricordo!</p>
+      <a id="share-link-empty" href="#" class="btn btn-primary">Carica una foto →</a>
+    </div>
+
+    <!-- Actual photos -->
+    <div id="photo-grid" class="photo-grid" style="margin-bottom:3rem;"></div>
+
+  </div>
+</main>
+
+<!-- Lightbox -->
+<div id="lightbox" class="lightbox" role="dialog" aria-label="Visualizzatore foto">
+  <button class="lightbox-close" id="lb-close" aria-label="Chiudi">✕</button>
+  <button class="lightbox-nav lightbox-prev" id="lb-prev" aria-label="Precedente">‹</button>
+  <button class="lightbox-nav lightbox-next" id="lb-next" aria-label="Successiva">›</button>
+
+  <!-- Media -->
+  <img id="lightbox-img" class="lightbox-media" src="" alt="Foto a schermo intero">
+  <video id="lightbox-video" class="lightbox-media hidden" controls playsinline></video>
+
+  <!-- Info & Controls -->
+  <div class="lightbox-controls">
+    <p class="lightbox-info" id="lightbox-info"></p>
+  </div>
+  <div style="display:flex;gap:0.75rem;align-items:center;">
+    <span style="font-size:0.8rem;color:rgba(255,255,255,0.4);" id="lightbox-counter"></span>
+    <button id="lb-download" class="btn btn-sm btn-ghost">⬇ Scarica</button>
+  </div>
+</div>
+
+<!-- Toasts -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ===== SCRIPTS ===== -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+<!-- JSZip + FileSaver for ZIP download -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/gallery.js"></script>
+
+<!-- Fix empty share links after JS loads -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const eventId = new URLSearchParams(window.location.search).get('event');
+    if (eventId) {
+      const emptyLink = document.getElementById('share-link-empty');
+      if (emptyLink) emptyLink.href = `share.html?event=${eventId}`;
+    }
+  });
+</script>
+
+</body>
+</html>

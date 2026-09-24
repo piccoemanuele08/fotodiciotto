@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Memories Share — Crea il tuo album evento</title>
+  <meta name="description" content="Crea un album condiviso per la tua festa. Gli invitati scansionano il QR code e caricano le loro foto. Tutto gratis.">
+  <meta name="theme-color" content="#7c3aed">
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- Sfondo animato -->
+<div class="bg-orbs">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+
+<!-- Banner configurazione -->
+<div id="config-banner" class="hidden" style="background:rgba(239,68,68,0.12);border-bottom:1px solid rgba(239,68,68,0.3);padding:0.8rem 1rem;text-align:center;font-size:0.875rem;color:#fca5a5;position:relative;z-index:300;">
+  ⚠️ <strong>App non configurata.</strong> Leggi <strong>SETUP.md</strong> per collegare Firebase. Le funzioni non funzioneranno finché non inserisci le chiavi API.
+</div>
+
+<!-- Header -->
+<header class="site-header">
+  <div class="container nav">
+    <a href="index.html" class="logo">
+      <div class="logo-icon">📸</div>
+      <span class="logo-name text-gradient">Memories Share</span>
+    </a>
+    <span class="text-sm text-muted" id="current-date"></span>
+  </div>
+</header>
+
+<!-- Main -->
+<main class="wrapper">
+  <div class="container">
+
+    <!-- Hero -->
+    <section class="hero fade-in">
+      <div class="hero-eyebrow">✨ Condivisione foto gratis</div>
+      <h1>Cattura ogni<br><span class="text-gradient">momento speciale</span></h1>
+      <p>Crea un album per la tua festa. Gli invitati scansionano il QR code e caricano le foto direttamente — anche giorni dopo, da qualsiasi posto.</p>
+    </section>
+
+    <!-- Create Event Card -->
+    <section class="page-section fade-in fade-in-delay-1">
+      <div class="card card-glow">
+        <h2 class="mb-1" style="font-size:1.4rem;">🎉 Crea un nuovo evento</h2>
+        <p class="text-muted text-sm mb-3">Compila i dettagli e ottieni subito il QR code da stampare o condividere.</p>
+
+        <form id="create-form">
+          <div class="form-group">
+            <label class="form-label" for="event-name">Nome dell'evento *</label>
+            <input id="event-name" class="form-input" type="text"
+                   placeholder="es. Compleanno Sara 🎂, Matrimonio 2025 💍..."
+                   maxlength="60" required autocomplete="off">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="event-date">Data dell'evento</label>
+            <input id="event-date" class="form-input" type="date">
+          </div>
+
+          <!-- Emoji picker -->
+          <div class="form-group">
+            <label class="form-label">Tema / Emoji</label>
+            <div class="flex flex-wrap gap-1" style="flex-wrap:wrap;">
+              <button type="button" class="emoji-btn active" data-emoji="🎉" style="width:44px;height:44px;border-radius:10px;border:2px solid var(--primary);background:rgba(124,58,237,0.15);font-size:1.4rem;cursor:pointer;transition:all 0.2s;">🎉</button>
+              <button type="button" class="emoji-btn" data-emoji="💍" style="width:44px;height:44px;border-radius:10px;border:1px solid var(--border);background:var(--surface);font-size:1.4rem;cursor:pointer;transition:all 0.2s;">💍</button>
+              <button type="button" class="emoji-btn" data-emoji="🎂" style="width:44px;height:44px;border-radius:10px;border:1px solid var(--border);background:var(--surface);font-size:1.4rem;cursor:pointer;transition:all 0.2s;">🎂</button>
+              <button type="button" class="emoji-btn" data-emoji="🥳" style="width:44px;height:44px;border-radius:10px;border:1px solid var(--border);background:var(--surface);font-size:1.4rem;cursor:pointer;transition:all 0.2s;">🥳</button>
+              <button type="button" class="emoji-btn" data-emoji="🎓" style="width:44px;height:44px;border-radius:10px;border:1px solid var(--border);background:var(--surface);font-size:1.4rem;cursor:pointer;transition:all 0.2s;">🎓</button>
+              <button type="button" class="emoji-btn" data-emoji="🌅" style="width:44px;height:44px;border-radius:10px;border:1px solid var(--border);background:var(--surface);font-size:1.4rem;cursor:pointer;transition:all 0.2s;">🌅</button>
+              <button type="button" class="emoji-btn" data-emoji="🎸" style="width:44px;height:44px;border-radius:10px;border:1px solid var(--border);background:var(--surface);font-size:1.4rem;cursor:pointer;transition:all 0.2s;">🎸</button>
+              <button type="button" class="emoji-btn" data-emoji="⚽" style="width:44px;height:44px;border-radius:10px;border:1px solid var(--border);background:var(--surface);font-size:1.4rem;cursor:pointer;transition:all 0.2s;">⚽</button>
+            </div>
+          </div>
+
+          <button id="create-btn" type="submit" class="btn btn-primary btn-lg btn-block mt-3">
+            ✨ Crea Evento e Genera QR
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Come funziona -->
+    <section class="page-section fade-in fade-in-delay-2">
+      <div class="card">
+        <h3 class="mb-3">Come funziona</h3>
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <h4>Crea l'evento</h4>
+              <p>Inserisci nome, data ed emoji. Ottieni istantaneamente un QR code univoco.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <h4>Stampa o condividi il QR</h4>
+              <p>Mettilo sui tavoli, sugli inviti o mandalo su WhatsApp. Non serve scaricare nessuna app.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <h4>Gli invitati caricano dal telefono</h4>
+              <p>Scansionano il QR → si apre il browser → caricano foto e video. Anche da casa, giorni dopo.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <h4>Galleria condivisa per tutti</h4>
+              <p>Tutti possono vedere e scaricare i ricordi. ZIP di tutte le foto con un click.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- I miei eventi -->
+    <section class="page-section">
+      <div id="my-events-section" class="hidden">
+        <div class="flex items-center justify-between mb-2">
+          <h3>I tuoi eventi</h3>
+          <span class="badge badge-primary">Salvati localmente</span>
+        </div>
+        <div id="my-events-list"></div>
+      </div>
+
+      <div id="events-empty" class="hidden">
+        <div class="empty-state">
+          <div class="empty-icon">📷</div>
+          <p class="text-muted">Nessun evento ancora. Crea il primo qui sopra!</p>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /container -->
+</main>
+
+<!-- QR Modal -->
+<div class="modal-backdrop" id="qr-modal">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-handle"></div>
+    <div class="text-center mb-3">
+      <h3 id="qr-event-name" class="mb-1"></h3>
+      <p class="text-muted text-sm">Condividi questo QR con i tuoi ospiti</p>
+    </div>
+
+    <!-- QR Code -->
+    <div class="qr-wrapper">
+      <div class="qr-box">
+        <canvas id="qr-canvas"></canvas>
+      </div>
+    </div>
+
+    <!-- Share link -->
+    <div class="share-link mb-3">
+      <span class="link-text" id="share-link-text"></span>
+      <button id="copy-link-btn" class="btn btn-xs btn-ghost">Copia</button>
+    </div>
+
+    <!-- Buttons -->
+    <div class="flex gap-2 mb-2">
+      <button id="print-qr-btn" class="btn btn-ghost flex-1">🖨 Stampa QR</button>
+      <a id="gallery-link" href="#" class="btn btn-primary flex-1" target="_blank">📷 Galleria</a>
+    </div>
+
+    <button id="close-qr-modal" class="btn btn-ghost btn-block">Chiudi</button>
+  </div>
+</div>
+
+<!-- Toasts -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ===== SCRIPTS ===== -->
+<!-- Firebase Compat SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+<!-- QR Code -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<!-- App config + logic -->
+<script src="js/config.js"></script>
+<script src="js/main.js"></script>
+
+<!-- Emoji button active style handler -->
+<script>
+document.querySelectorAll('.emoji-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.emoji-btn').forEach(b => {
+      b.style.borderColor = 'var(--border)';
+      b.style.background  = 'var(--surface)';
+    });
+    btn.style.borderColor = 'var(--primary)';
+    btn.style.background  = 'rgba(124,58,237,0.15)';
+  });
+});
+</script>
+
+</body>
+</html>
